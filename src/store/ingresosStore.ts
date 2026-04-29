@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { dbGetIngresos, dbSaveIngreso, dbDeleteIngreso, dbClearIngresos } from '../db'
+import { dbGetIngresos, dbSaveIngreso, dbDeleteIngreso } from '../db'
 import type { CategoriaIngreso } from '../types'
 
 interface IngresosStore {

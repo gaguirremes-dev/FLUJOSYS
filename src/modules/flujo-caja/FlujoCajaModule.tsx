@@ -72,7 +72,7 @@ export function FlujoCajaModule() {
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={(v) => `${simbolo}${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v: number) => fmt(v)} labelFormatter={(l) => `${l}`} />
+            <Tooltip formatter={(v) => typeof v === 'number' ? fmt(v) : ''} labelFormatter={(l) => `${l}`} />
             <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="4 4" />
             <Line type="monotone" dataKey="saldoAcumulado" name="Saldo acumulado" stroke="#2563eb" strokeWidth={2} dot={false} />
           </LineChart>
@@ -87,7 +87,7 @@ export function FlujoCajaModule() {
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={(v) => `${simbolo}${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v: number) => fmt(v)} />
+            <Tooltip formatter={(v) => typeof v === 'number' ? fmt(v) : ''} />
             <ReferenceLine y={0} stroke="#374151" />
             <Legend />
             <Bar dataKey="totalIngresos" name="Ingresos" fill="#22c55e" radius={[3, 3, 0, 0]} />

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useConfigStore } from '../../store/configStore'
@@ -32,7 +32,7 @@ export function FinanciamientoModule() {
   const [tablaAbierta, setTablaAbierta] = useState<string | null>(null)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: { nombre: '', monto: 0, tasaAnual: 0, numeroCuotas: 12, periodoInicio: 0 },
   })
 
