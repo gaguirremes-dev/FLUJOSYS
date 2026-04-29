@@ -8,6 +8,7 @@ import { FlujoCajaModule } from './modules/flujo-caja/FlujoCajaModule'
 import { SimulacionModule } from './modules/simulacion/SimulacionModule'
 import { AlertasModule } from './modules/alertas/AlertasModule'
 import { ReportesModule } from './modules/reportes/ReportesModule'
+import { ProyeccionesModule } from './modules/proyecciones/ProyeccionesModule'
 import { useConfigStore } from './store/configStore'
 import { useIngresosStore } from './store/ingresosStore'
 import { useEgresosStore } from './store/egresosStore'
@@ -15,9 +16,10 @@ import { useFinanciamientoStore } from './store/financiamientoStore'
 import { useSimulacionStore } from './store/simulacionStore'
 import { useFlujoStore } from './store/flujoStore'
 import { useAlertasStore } from './store/alertasStore'
+import { useProyeccionesStore } from './store/proyeccionesStore'
 
 export default function App() {
-  const [seccion, setSeccion] = useState<Seccion>('config')
+  const [seccion, setSeccion] = useState<Seccion>('proyecciones')
   const [listo, setListo] = useState(false)
 
   const cargarConfig = useConfigStore((s) => s.cargarConfig)
@@ -25,13 +27,20 @@ export default function App() {
   const cargarEgresos = useEgresosStore((s) => s.cargar)
   const cargarFinanciamiento = useFinanciamientoStore((s) => s.cargar)
   const cargarSimulacion = useSimulacionStore((s) => s.cargar)
+  const cargarProyecciones = useProyeccionesStore((s) => s.cargar)
   const recalcularFlujo = useFlujoStore((s) => s.recalcular)
   const recalcularAlertas = useAlertasStore((s) => s.recalcular)
 
   useEffect(() => {
     async function init() {
       await cargarConfig()
-      await Promise.all([cargarIngresos(), cargarEgresos(), cargarFinanciamiento(), cargarSimulacion()])
+      await Promise.all([
+        cargarIngresos(),
+        cargarEgresos(),
+        cargarFinanciamiento(),
+        cargarSimulacion(),
+        cargarProyecciones(),
+      ])
       recalcularFlujo()
       recalcularAlertas()
       setListo(true)
@@ -51,6 +60,7 @@ export default function App() {
   }
 
   const modulos: Record<Seccion, React.ReactElement> = {
+    proyecciones: <ProyeccionesModule onNavegar={setSeccion} />,
     config: <ConfigModule />,
     ingresos: <IngresosModule />,
     egresos: <EgresosModule />,

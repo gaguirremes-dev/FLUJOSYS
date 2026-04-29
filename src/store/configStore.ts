@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { dbGetConfig, dbSaveConfig, dbResetAll } from '../db'
+import { dbGetConfig, dbSaveConfig, dbResetWorkspace } from '../db'
 import type { Moneda, ProyeccionConfig, UnidadPeriodo } from '../types'
 
 interface ConfigStore {
@@ -44,7 +44,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   resetear: async () => {
-    await dbResetAll()
+    await dbResetWorkspace()
     const config = defaultConfig()
     await dbSaveConfig(config)
     set({ config })

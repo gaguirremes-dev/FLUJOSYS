@@ -5,6 +5,7 @@ import type {
   CategoriaEgreso,
   Prestamo,
   Escenario,
+  Proyeccion,
 } from '../types'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -102,9 +103,26 @@ export async function dbDeleteEscenario(id: string): Promise<void> {
   await db.delete('escenarios', id)
 }
 
+// ─── Proyecciones ─────────────────────────────────────────────────────────────
+
+export async function dbGetProyecciones(): Promise<Proyeccion[]> {
+  const db = await getDB()
+  return db.getAllFromIndex('proyecciones', 'by-fecha')
+}
+
+export async function dbSaveProyeccion(proyeccion: Proyeccion): Promise<void> {
+  const db = await getDB()
+  await db.put('proyecciones', proyeccion)
+}
+
+export async function dbDeleteProyeccion(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('proyecciones', id)
+}
+
 // ─── Reset completo ───────────────────────────────────────────────────────────
 
-export async function dbResetAll(): Promise<void> {
+export async function dbResetWorkspace(): Promise<void> {
   const db = await getDB()
   const tx = db.transaction(
     ['config', 'categorias_ingreso', 'categorias_egreso', 'prestamos', 'escenarios'],

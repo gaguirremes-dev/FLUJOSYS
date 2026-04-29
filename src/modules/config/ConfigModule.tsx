@@ -8,6 +8,7 @@ import { useEgresosStore } from '../../store/egresosStore'
 import { useFinanciamientoStore } from '../../store/financiamientoStore'
 import { useFlujoStore } from '../../store/flujoStore'
 import { useAlertasStore } from '../../store/alertasStore'
+import { useProyeccionesStore } from '../../store/proyeccionesStore'
 import { Button } from '../../components/Button'
 import { Input } from '../../components/Input'
 import { Modal } from '../../components/Modal'
@@ -30,10 +31,12 @@ export function ConfigModule() {
   const recalcularAlertas = useAlertasStore((s) => s.recalcular)
   const redimensionarIngresos = useIngresosStore((s) => s.redimensionar)
   const redimensionarEgresos = useEgresosStore((s) => s.redimensionar)
+  const guardarActual = useProyeccionesStore((s) => s.guardarActual)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showUnidadModal, setShowUnidadModal] = useState(false)
   const [pendingUnidad, setPendingUnidad] = useState<UnidadPeriodo | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | undefined>(config?.logoBase64)
+  const [savedMsg, setSavedMsg] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -80,6 +83,9 @@ export function ConfigModule() {
 
     recalcularFlujo()
     recalcularAlertas()
+    await guardarActual()
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 2500)
   }
 
   const handleConfirmarUnidad = async () => {
@@ -215,7 +221,10 @@ export function ConfigModule() {
           />
         </div>
 
-        <Button type="submit" className="w-full">Guardar configuración</Button>
+        <div className="flex items-center gap-3">
+          <Button type="submit" className="flex-1">Guardar configuracion</Button>
+          {savedMsg && <span className="text-green-600 text-sm font-medium">Guardado</span>}
+        </div>
       </form>
 
       {/* Modal cambio de unidad */}

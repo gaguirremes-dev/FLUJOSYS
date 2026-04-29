@@ -5,6 +5,7 @@ import type {
   CategoriaEgreso,
   Prestamo,
   Escenario,
+  Proyeccion,
 } from '../types'
 
 export interface FlujosysDB extends DBSchema {
@@ -31,6 +32,11 @@ export interface FlujosysDB extends DBSchema {
     value: Escenario
     indexes: { 'by-nombre': string }
   }
+  proyecciones: {
+    key: string
+    value: Proyeccion
+    indexes: { 'by-fecha': string }
+  }
 }
 
 let dbInstance: IDBPDatabase<FlujosysDB> | null = null
@@ -38,20 +44,26 @@ let dbInstance: IDBPDatabase<FlujosysDB> | null = null
 export async function getDB(): Promise<IDBPDatabase<FlujosysDB>> {
   if (dbInstance) return dbInstance
 
-  dbInstance = await openDB<FlujosysDB>('flujosys-db', 1, {
-    upgrade(db) {
-      db.createObjectStore('config', { keyPath: 'id' })
+  dbInstance = await openDB<FlujosysDB>('flujosys-db', 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore('config', { keyPath: 'id' })
 
-      const ingresosStore = db.createObjectStore('categorias_ingreso', { keyPath: 'id' })
-      ingresosStore.createIndex('by-orden', 'orden')
+        const ingresosStore = db.createObjectStore('categorias_ingreso', { keyPath: 'id' })
+        ingresosStore.createIndex('by-orden', 'orden')
 
-      const egresosStore = db.createObjectStore('categorias_egreso', { keyPath: 'id' })
-      egresosStore.createIndex('by-orden', 'orden')
+        const egresosStore = db.createObjectStore('categorias_egreso', { keyPath: 'id' })
+        egresosStore.createIndex('by-orden', 'orden')
 
-      db.createObjectStore('prestamos', { keyPath: 'id' })
+        db.createObjectStore('prestamos', { keyPath: 'id' })
 
-      const escenariosStore = db.createObjectStore('escenarios', { keyPath: 'id' })
-      escenariosStore.createIndex('by-nombre', 'nombre')
+        const escenariosStore = db.createObjectStore('escenarios', { keyPath: 'id' })
+        escenariosStore.createIndex('by-nombre', 'nombre')
+      }
+      if (oldVersion < 2) {
+        const proyeccionesStore = db.createObjectStore('proyecciones', { keyPath: 'id' })
+        proyeccionesStore.createIndex('by-fecha', 'creadoEn')
+      }
     },
   })
 

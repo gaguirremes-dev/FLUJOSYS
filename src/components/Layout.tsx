@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { useAlertasStore } from '../store/alertasStore'
+import { useProyeccionesStore } from '../store/proyeccionesStore'
 import { Badge } from './Badge'
 
 type Seccion =
+  | 'proyecciones'
   | 'config'
   | 'ingresos'
   | 'egresos'
@@ -19,12 +21,13 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: 'config', label: 'Configuración', icon: '⚙️' },
+  { id: 'proyecciones', label: 'Proyecciones', icon: '📁' },
+  { id: 'config', label: 'Configuracion', icon: '⚙️' },
   { id: 'ingresos', label: 'Ingresos', icon: '📈' },
   { id: 'egresos', label: 'Egresos', icon: '📉' },
   { id: 'financiamiento', label: 'Financiamiento', icon: '🏦' },
   { id: 'flujo', label: 'Flujo de Caja', icon: '💰' },
-  { id: 'simulacion', label: 'Simulación', icon: '🔮' },
+  { id: 'simulacion', label: 'Simulacion', icon: '🔮' },
   { id: 'alertas', label: 'Alertas', icon: '🔔' },
   { id: 'reportes', label: 'Reportes', icon: '📄' },
 ]
@@ -37,6 +40,7 @@ interface Props {
 
 export function Layout({ seccionActiva, onNavegar, children }: Props) {
   const alertas = useAlertasStore((s) => s.alertas)
+  const proyecciones = useProyeccionesStore((s) => s.proyecciones)
   const criticas = alertas.filter((a) => a.severidad === 'critica').length
   const totalAlertas = alertas.length
 
@@ -47,7 +51,7 @@ export function Layout({ seccionActiva, onNavegar, children }: Props) {
         {/* Logo */}
         <div className="px-5 py-4 border-b border-gray-200">
           <h1 className="text-lg font-bold text-blue-600">Flujosys</h1>
-          <p className="text-xs text-gray-400">Gestión de flujo de caja</p>
+          <p className="text-xs text-gray-400">Gestion de flujo de caja</p>
         </div>
 
         {/* Nav */}
@@ -55,6 +59,7 @@ export function Layout({ seccionActiva, onNavegar, children }: Props) {
           {NAV.map((item) => {
             const isActive = seccionActiva === item.id
             const isAlertas = item.id === 'alertas'
+            const isProyecciones = item.id === 'proyecciones'
             return (
               <button
                 key={item.id}
@@ -66,6 +71,9 @@ export function Layout({ seccionActiva, onNavegar, children }: Props) {
                 <span className="flex-1">{item.label}</span>
                 {isAlertas && totalAlertas > 0 && (
                   <Badge count={criticas > 0 ? criticas : totalAlertas} variant={criticas > 0 ? 'danger' : 'warning'} />
+                )}
+                {isProyecciones && proyecciones.length > 0 && (
+                  <Badge count={proyecciones.length} variant="neutral" />
                 )}
               </button>
             )

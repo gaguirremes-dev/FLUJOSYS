@@ -5,6 +5,7 @@ export type UnidadPeriodo = 'dia' | 'semana' | 'mes' | 'año'
 
 export interface ProyeccionConfig {
   id: 'singleton'
+  proyeccionId?: string
   nombreEmpresa: string
   moneda: Moneda
   unidadPeriodo: UnidadPeriodo
@@ -102,6 +103,23 @@ export interface Alerta {
   periodosAfectados: number[] // 1-based
   monto: number
   recomendacion: string
+}
+
+// ─── Proyecciones guardadas ───────────────────────────────────────────────────
+
+export interface Proyeccion {
+  id: string
+  nombre: string
+  moneda: Moneda
+  numeroPeriodos: number
+  creadoEn: string
+  actualizadoEn: string
+  snapshot: {
+    config: ProyeccionConfig
+    categoriasIngreso: CategoriaIngreso[]
+    categoriasEgreso: CategoriaEgreso[]
+    prestamos: Prestamo[]
+  }
 }
 
 // ─── Comparación de escenarios ────────────────────────────────────────────────
