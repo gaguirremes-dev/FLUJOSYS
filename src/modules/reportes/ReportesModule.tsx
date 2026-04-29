@@ -36,7 +36,7 @@ export function ReportesModule() {
           <p className="text-sm text-gray-500 mt-1">Exporta tu proyección en PDF o Excel</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => exportarExcel({ config, resultados })}>
+          <Button variant="secondary" onClick={() => void exportarExcel({ config, resultados })}>
             📊 Exportar Excel
           </Button>
           <Button onClick={() => exportarPDF({ config, resultados, alertas })}>
