@@ -1,0 +1,176 @@
+import { useState } from 'react'
+import { useConfigStore } from '../../store/configStore'
+import { useEgresosStore } from '../../store/egresosStore'
+import { useFlujoStore } from '../../store/flujoStore'
+import { useAlertasStore } from '../../store/alertasStore'
+import { Button } from '../../components/Button'
+import { Modal } from '../../components/Modal'
+import { Input } from '../../components/Input'
+import type { Moneda, TipoEgreso } from '../../types'
+
+const simbolos: Record<Moneda, string> = { PEN: 'S/', USD: 'US$', EUR: '€' }
+const tipoLabels: Record<TipoEgreso, string> = {
+  compras: 'Compras',
+  planilla: 'Planilla',
+  servicios: 'Servicios',
+  tributos: 'Tributos',
+  otro: 'Otro',
+}
+
+export function EgresosModule() {
+  const config = useConfigStore((s) => s.config)
+  const { categorias, agregarCategoria, actualizarMonto, eliminarCategoria } = useEgresosStore()
+  const recalcularFlujo = useFlujoStore((s) => s.recalcular)
+  const recalcularAlertas = useAlertasStore((s) => s.recalcular)
+  const [showModal, setShowModal] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [tipo, setTipo] = useState<TipoEgreso>('compras')
+  const [errores, setErrores] = useState<Record<string, string>>({})
+
+  if (!config) return <p className="text-gray-500">Configura la proyección primero.</p>
+
+  const simbolo = simbolos[config.moneda]
+  const periodos = Array.from({ length: config.numeroPeriodos }, (_, i) => i)
+  const labels = periodos.map((i) => {
+    const map = { dia: 'D', semana: 'S', mes: 'M', año: 'A' }
+    return `${map[config.unidadPeriodo]}${i + 1}`
+  })
+
+  const handleAgregar = async () => {
+    if (!nombre.trim()) return
+    await agregarCategoria(nombre.trim(), tipo, config.numeroPeriodos)
+    setNombre('')
+    setTipo('compras')
+    setShowModal(false)
+  }
+
+  const handleMonto = async (id: string, periodoIdx: number, valor: string) => {
+    const num = parseFloat(valor)
+    const key = `${id}-${periodoIdx}`
+    if (valor !== '' && (isNaN(num) || num < 0)) {
+      setErrores((prev) => ({ ...prev, [key]: 'Valor inválido' }))
+      return
+    }
+    setErrores((prev) => { const n = { ...prev }; delete n[key]; return n })
+    await actualizarMonto(id, periodoIdx, isNaN(num) ? 0 : num)
+    recalcularFlujo()
+    recalcularAlertas()
+  }
+
+  const totalPorPeriodo = periodos.map((i) =>
+    categorias.reduce((sum, c) => sum + (c.montos[i] ?? 0), 0)
+  )
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Egresos</h2>
+          <p className="text-sm text-gray-500 mt-1">Egresos proyectados por período</p>
+        </div>
+        <Button onClick={() => setShowModal(true)}>+ Agregar categoría</Button>
+      </div>
+
+      {categorias.length === 0 ? (
+        <div className="bg-white rounded-xl border border-dashed border-gray-300 p-10 text-center">
+          <p className="text-gray-400 mb-3">No hay categorías de egreso</p>
+          <Button size="sm" onClick={() => setShowModal(true)}>Agregar primera categoría</Button>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left px-4 py-3 font-medium text-gray-700 w-40">Categoría</th>
+                <th className="text-left px-2 py-3 font-medium text-gray-500 w-24">Tipo</th>
+                {labels.map((l) => (
+                  <th key={l} className="text-right px-2 py-3 font-medium text-gray-500 min-w-24">{l}</th>
+                ))}
+                <th className="px-3 py-3 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {categorias.map((cat) => (
+                <tr key={cat.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-2 font-medium text-gray-800">{cat.nombre}</td>
+                  <td className="px-2 py-2">
+                    <span className="text-xs bg-gray-100 text-gray-600 rounded px-2 py-0.5">
+                      {tipoLabels[cat.tipo]}
+                    </span>
+                  </td>
+                  {periodos.map((i) => {
+                    const key = `${cat.id}-${i}`
+                    return (
+                      <td key={i} className="px-1 py-1.5">
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">{simbolo}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            defaultValue={cat.montos[i] || ''}
+                            placeholder="0"
+                            onBlur={(e) => handleMonto(cat.id, i, e.target.value)}
+                            className={`w-full text-right pl-6 pr-2 py-1 rounded border text-xs outline-none focus:border-red-400
+                              ${errores[key] ? 'border-red-400' : 'border-gray-200'}`}
+                          />
+                        </div>
+                        {errores[key] && <p className="text-red-500 text-xs mt-0.5">{errores[key]}</p>}
+                      </td>
+                    )
+                  })}
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={async () => { await eliminarCategoria(cat.id); recalcularFlujo(); recalcularAlertas() }}
+                      className="text-gray-300 hover:text-red-500 transition-colors text-lg"
+                      title="Eliminar"
+                    >×</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-red-50 font-semibold">
+                <td className="px-4 py-2.5 text-red-700" colSpan={2}>Total</td>
+                {totalPorPeriodo.map((t, i) => (
+                  <td key={i} className="px-2 py-2.5 text-right text-red-700">
+                    {simbolo}{t.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                  </td>
+                ))}
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
+      <Modal open={showModal} title="Agregar categoría de egreso" onClose={() => setShowModal(false)}>
+        <div className="space-y-4">
+          <Input
+            label="Nombre de la categoría"
+            placeholder="Ej: Planilla mensual"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            autoFocus
+          />
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">Tipo</label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value as TipoEgreso)}
+            >
+              {(Object.keys(tipoLabels) as TipoEgreso[]).map((t) => (
+                <option key={t} value={t}>{tipoLabels[t]}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-4 justify-end">
+          <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
+          <Button onClick={handleAgregar} disabled={!nombre.trim()}>Agregar</Button>
+        </div>
+      </Modal>
+    </div>
+  )
+}
