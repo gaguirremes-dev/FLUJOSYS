@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Alerta, ProyeccionConfig, ResultadoPeriodo } from '../../types'
+import { getLogoFlujosysBase64 } from '../../utils/logoCache'
 
 interface Params {
   config: ProyeccionConfig
@@ -16,7 +17,8 @@ const PAGE_W = 210
 const CONTENT_W = PAGE_W - MARGIN * 2
 const FOOTER_Y = 289
 
-export function exportarPDF({ config, resultados, alertas }: Params): void {
+export async function exportarPDF({ config, resultados, alertas }: Params): Promise<void> {
+  const logoFlujosys = await getLogoFlujosysBase64()
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const simbolo = MONEDA_SIMBOLO[config.moneda] ?? 'S/'
   const fmt = (n: number) => `${simbolo}${n.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
@@ -46,10 +48,21 @@ export function exportarPDF({ config, resultados, alertas }: Params): void {
   doc.setFontSize(9).setFont('helvetica', 'normal').setTextColor(186, 214, 255)
   doc.text('Reporte de Flujo de Caja Proyectado', textStartX, y + 12)
 
-  // Fecha alineada a la derecha
+  // Logo Flujosys en esquina superior derecha (fondo blanco + logo)
+  const logoW = 22
+  const logoH = 13
+  const logoX = PAGE_W - MARGIN - logoW
+  const logoY = y - 3
+  doc.setFillColor(255, 255, 255)
+  doc.roundedRect(logoX, logoY, logoW, logoH, 1, 1, 'F')
+  try {
+    doc.addImage(logoFlujosys, 'JPEG', logoX, logoY, logoW, logoH)
+  } catch { /* logo opcional */ }
+
+  // Fecha y periodos debajo del logo
   doc.setFontSize(8).setTextColor(186, 214, 255)
-  doc.text(fecha, PAGE_W - MARGIN, y + 5, { align: 'right' })
-  doc.text(`${config.numeroPeriodos} periodos · ${config.moneda}`, PAGE_W - MARGIN, y + 12, { align: 'right' })
+  doc.text(fecha, PAGE_W - MARGIN, y + 13, { align: 'right' })
+  doc.text(`${config.numeroPeriodos} periodos · ${config.moneda}`, PAGE_W - MARGIN, y + 20, { align: 'right' })
 
   doc.setTextColor(0, 0, 0)
   y = 44
@@ -182,14 +195,23 @@ export function exportarPDF({ config, resultados, alertas }: Params): void {
 
   // ─── Footer en cada pagina ────────────────────────────────────────────────────
   const pageCount = doc.getNumberOfPages()
+  const footerLogoH = 6
+  const footerLogoW = footerLogoH * (22 / 13)
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
-    // Linea separadora
     doc.setDrawColor(203, 213, 225)
     doc.line(MARGIN, FOOTER_Y - 4, PAGE_W - MARGIN, FOOTER_Y - 4)
+    try {
+      doc.addImage(logoFlujosys, 'JPEG', MARGIN, FOOTER_Y - footerLogoH - 1, footerLogoW, footerLogoH)
+    } catch { /* logo opcional */ }
     doc.setFontSize(6.5).setTextColor(148, 163, 184)
-    doc.text('Generado con Flujosys — Sistema de Gestion de Flujo de Caja', MARGIN, FOOTER_Y)
-    doc.text(`Pagina ${i} de ${pageCount}`, PAGE_W - MARGIN, FOOTER_Y, { align: 'right' })
+    doc.text('Sistema de Gestion de Flujo de Caja', MARGIN + footerLogoW + 2, FOOTER_Y - 1)
+    doc.text(`Pagina ${i} de ${pageCount}`, PAGE_W - MARGIN, FOOTER_Y - 1, { align: 'right' })
+    doc.setFontSize(5.5).setTextColor(180, 180, 180)
+    doc.text(
+      'Autores: Giannier Aguirre Mestanza  |  MA Ing. Roberto Carlos Arteaga Lora  |  Dra. CPC. Giuliana Vilma Millones Orrego de Gastelo',
+      PAGE_W / 2, FOOTER_Y + 4, { align: 'center' }
+    )
     doc.setTextColor(0)
   }
 

@@ -39,7 +39,7 @@ export function ReportesModule() {
           <Button variant="secondary" onClick={() => void exportarExcel({ config, resultados })}>
             📊 Exportar Excel
           </Button>
-          <Button onClick={() => exportarPDF({ config, resultados, alertas })}>
+          <Button onClick={() => void exportarPDF({ config, resultados, alertas })}>
             📄 Exportar PDF
           </Button>
         </div>

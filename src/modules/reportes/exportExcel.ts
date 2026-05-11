@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import type { ProyeccionConfig, ResultadoPeriodo } from '../../types'
+import { getLogoFlujosysBase64 } from '../../utils/logoCache'
 
 interface Params {
   config: ProyeccionConfig
@@ -35,6 +36,12 @@ export async function exportarExcel({ config, resultados }: Params): Promise<voi
   wb.creator = 'Flujosys'
   wb.created = new Date()
 
+  const logoBase64 = await getLogoFlujosysBase64()
+  const logoImageId = wb.addImage({
+    base64: logoBase64.replace(/^data:image\/\w+;base64,/, ''),
+    extension: 'jpeg',
+  })
+
   const fecha = new Date().toLocaleDateString('es-PE')
   const fmt = currency(config.moneda)
 
@@ -52,7 +59,14 @@ export async function exportarExcel({ config, resultados }: Params): Promise<voi
     { key: 'cuotas',       width: 18 },
     { key: 'flujoNeto',    width: 16 },
     { key: 'saldo',        width: 18 },
+    { key: 'logo',         width: 18 },
   ]
+
+  // Logo Flujosys en esquina superior derecha (columna H, filas 1-3)
+  ws.addImage(logoImageId, {
+    tl: { col: 7, row: 0 },
+    ext: { width: 130, height: 65 },
+  })
 
   // Fila 1 — Titulo principal
   ws.mergeCells('A1:G1')
@@ -171,9 +185,24 @@ export async function exportarExcel({ config, resultados }: Params): Promise<voi
     }
   })
 
+  // Fila de autores — Flujo de Caja
+  const autoresRowIdx = 5 + resultados.length + 3
+  const autoresRow = ws.getRow(autoresRowIdx)
+  ws.mergeCells(`A${autoresRowIdx}:G${autoresRowIdx}`)
+  const autoresCell = autoresRow.getCell(1)
+  autoresCell.value = 'Autores: Giannier Aguirre Mestanza  |  MA Ing. Roberto Carlos Arteaga Lora  |  Dra. CPC. Giuliana Vilma Millones Orrego de Gastelo'
+  autoresCell.font = { name: 'Calibri', italic: true, size: 8, color: { argb: '6B7280' } }
+  autoresCell.alignment = { horizontal: 'center', vertical: 'middle' }
+  autoresRow.height = 16
+
   // ─── Hoja 2: Indicadores ─────────────────────────────────────────────────────
   const ws2 = wb.addWorksheet('Indicadores')
-  ws2.columns = [{ width: 34 }, { width: 20 }]
+  ws2.columns = [{ width: 34 }, { width: 20 }, { width: 16 }]
+
+  ws2.addImage(logoImageId, {
+    tl: { col: 2, row: 0 },
+    ext: { width: 120, height: 60 },
+  })
 
   ws2.mergeCells('A1:B1')
   const tit2 = ws2.getCell('A1')
@@ -239,6 +268,16 @@ export async function exportarExcel({ config, resultados }: Params): Promise<voi
     }
     cVal.border = border()
   })
+
+  // Fila de autores — Indicadores
+  const autoresRowIdx2 = 4 + indicadores.length + 2
+  const autoresRow2 = ws2.getRow(autoresRowIdx2)
+  ws2.mergeCells(`A${autoresRowIdx2}:C${autoresRowIdx2}`)
+  const autoresCell2 = autoresRow2.getCell(1)
+  autoresCell2.value = 'Autores: Giannier Aguirre Mestanza  |  MA Ing. Roberto Carlos Arteaga Lora  |  Dra. CPC. Giuliana Vilma Millones Orrego de Gastelo'
+  autoresCell2.font = { name: 'Calibri', italic: true, size: 8, color: { argb: '6B7280' } }
+  autoresCell2.alignment = { horizontal: 'center', vertical: 'middle' }
+  autoresRow2.height = 16
 
   // Generar y descargar
   const buffer = await wb.xlsx.writeBuffer()
